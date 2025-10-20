@@ -1,0 +1,30 @@
+Lembre do cabeçalho:
+V = número de vértices → 3 (A, B, C)
+A = número de arestas → 3 (A–B, B–C, C–A)
+D = direcionado (0 = não, 1 = sim) → 0 (não direcionado)
+P = ponderado (0 = não, 1 = sim) → 1 (sim, porque tem peso nas arestas)
+
+
+
+Não direcionado, ponderado (A–B=1, B–C=2, C–A=3)
+3 3 0 1
+A B 1
+B C 2
+C A 3
+
+
+Direcionado, ponderado
+4 4 1 1
+A B 1
+B C 2
+C D 3
+A D 2
+
+
+Não direcionado, não ponderado (sem pesos)
+5 5 0 0
+A B
+B C
+C D
+D E
+E A

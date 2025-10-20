@@ -1,0 +1,285 @@
+/* css/style.css - Estilo completo da aplicação */
+:root {
+  --bg: #f5f7fb;
+  --panel: #fff;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --brand: #2563eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  margin: 0;
+  padding: 16px;
+}
+
+h2 {
+  margin: 0 0 12px;
+  color: #222;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 920px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.card .hd {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.card .bd {
+  padding: 12px 14px;
+}
+
+.panel {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel .hd {
+  position: sticky;
+  top: 0;
+  background: var(--panel, #fff);
+  z-index: 2;
+}
+
+.panel .bd {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel .bd::-webkit-scrollbar {
+  width: 10px;
+}
+
+.panel .bd::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.panel .bd::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+.panel .bd:hover::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+}
+
+@media (max-width: 920px) {
+  .panel {
+    position: static;
+    max-height: none;
+  }
+  .panel .bd {
+    overflow: visible;
+  }
+}
+
+.section {
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: #374151;
+  margin: 6px 0 4px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.textarea {
+  height: 110px;
+  resize: vertical;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--brand);
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  background: #6b7280;
+}
+
+.btn.danger {
+  background: #dc2626;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn-row .btn {
+  flex: 1;
+}
+
+#stage {
+  height: 650px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  touch-action: none;
+}
+
+.node {
+  cursor: grab;
+}
+
+.node:active {
+  cursor: grabbing;
+}
+
+.edge {
+  stroke: #555;
+  stroke-width: 2;
+}
+
+.label {
+  font-size: 13px;
+  fill: #111;
+  pointer-events: none;
+}
+
+.label.shadow {
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.node circle {
+  stroke: #2f3a47;
+  stroke-width: 1.3;
+}
+
+.node:hover circle {
+  stroke: var(--brand);
+  stroke-width: 2;
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+}
+
+.dlg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.dlg.show {
+  display: flex;
+}
+
+.dlg-box {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  max-width: 900px;
+  width: 100%;
+  max-height: 85vh;
+  overflow: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.dlg-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.dlg-bd {
+  padding: 12px 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  white-space: pre-wrap;
+}
+
+.dlg-close {
+  border: 0;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.edge.hl {
+  stroke: #e11d48;
+  stroke-width: 4;
+}
+
+.node circle.hl {
+  stroke: #e11d48;
+  stroke-width: 3;
+  fill: #fde68a;
+}
