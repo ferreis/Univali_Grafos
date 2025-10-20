@@ -64,12 +64,12 @@ abstract class Grafo
      * Formato:
      * Linha 1: V A D P
      * Próximas A linhas:
-     *   - Se P=0: origem destino
-     *   - Se P=1: origem destino peso
+     * - Se P=0: origem destino
+     * - Se P=1: origem destino peso
      *
      * Índices no arquivo podem ser baseados em 0 ou 1. O método detecta:
-     *   - Se maior índice aparecer == V  => considera base 1 (subtrai 1)
-     *   - Caso contrário                 => considera base 0
+     * - Se maior índice aparecer == V  => considera base 1 (subtrai 1)
+     * - Caso contrário                 => considera base 0
      */
     public function carregarDeArquivo(string $caminhoArquivo): void
     {
@@ -262,8 +262,8 @@ abstract class Grafo
     /**
      * Retorna para cada vértice:
      * [
-     *   'distancia' => float|INF,
-     *   'caminho'   => int[] (índices do caminho da origem até ele; vazio se inalcançável)
+     * 'distancia' => float|INF,
+     * 'caminho'   => int[] (índices do caminho da origem até ele; vazio se inalcançável)
      * ]
      */
     public function dijkstra(int $indiceOrigem): array
@@ -349,5 +349,190 @@ abstract class Grafo
         }
 
         return $caminho;
+    }
+
+    // =================== Prim ===================
+
+    /**
+     * Algoritmo de Prim para encontrar a Árvore Geradora Mínima (AGM).
+     * Funciona em grafos CONEXOS, não-direcionados e ponderados.
+     *
+     * @param int $indiceVerticeInicial Vértice para iniciar a busca.
+     * @return array ['peso_total' => float, 'arestas' => array]
+     */
+    public function prim(int $indiceVerticeInicial = 0): array
+    {
+        $num_vertices = $this->obterNumeroDeVertices();
+        if ($num_vertices === 0) {
+            return ['peso_total' => 0.0, 'arestas' => []];
+        }
+
+        // Custo mínimo para conectar o vértice [i] à AGM
+        $custo_minimo_aresta = array_fill(0, $num_vertices, INF);
+        // Aresta que conecta o vértice [i] (ex: ['de' => 0, 'para' => 1, 'peso' => 5])
+        $aresta_precedente_na_agm = array_fill(0, $num_vertices, null);
+        // Vértice [i] já está na AGM?
+        $vertice_esta_na_agm = array_fill(0, $num_vertices, false);
+
+        $fila_prioridade = new SplPriorityQueue();
+        // Usamos prioridade negativa para simular min-heap
+        $fila_prioridade->insert($indiceVerticeInicial, 0.0);
+        $custo_minimo_aresta[$indiceVerticeInicial] = 0.0;
+
+        $agm_arestas = [];
+        $agm_peso_total = 0.0;
+
+        while (!$fila_prioridade->isEmpty()) {
+            $vertice_atual = $fila_prioridade->extract();
+
+            if ($vertice_esta_na_agm[$vertice_atual]) {
+                continue;
+            }
+
+            $vertice_esta_na_agm[$vertice_atual] = true;
+
+            // Se este vértice não é a raiz, adiciona a aresta que o conectou
+            if ($aresta_precedente_na_agm[$vertice_atual] !== null) {
+                $aresta = $aresta_precedente_na_agm[$vertice_atual];
+                $agm_arestas[] = $aresta;
+                $agm_peso_total += $aresta['peso'];
+            }
+
+            foreach ($this->retornarVizinhos($vertice_atual) as $vizinho) {
+                $peso_aresta = $this->pesoAresta($vertice_atual, $vizinho);
+
+                if ($peso_aresta === null) continue; // Sanidade
+
+                // Se o vizinho ainda não está na AGM e esta aresta é mais barata...
+                if (!$vertice_esta_na_agm[$vizinho] && $peso_aresta < $custo_minimo_aresta[$vizinho]) {
+                    $custo_minimo_aresta[$vizinho] = $peso_aresta;
+                    $aresta_precedente_na_agm[$vizinho] = [
+                        'de' => $vertice_atual,
+                        'para' => $vizinho,
+                        'peso' => $peso_aresta
+                    ];
+                    $fila_prioridade->insert($vizinho, -$peso_aresta);
+                }
+            }
+        }
+
+        return ['peso_total' => $agm_peso_total, 'arestas' => $agm_arestas];
+    }
+
+    // =================== Kruskal ===================
+
+    /**
+     * Algoritmo de Kruskal para encontrar a Árvore Geradora Mínima (AGM).
+     * Funciona em grafos não-direcionados e ponderados.
+     *
+     * @return array ['peso_total' => float, 'arestas' => array]
+     */
+    public function kruskal(): array
+    {
+        $num_vertices = $this->obterNumeroDeVertices();
+        if ($num_vertices === 0) {
+            return ['peso_total' => 0.0, 'arestas' => []];
+        }
+
+        $arestas_grafo = [];
+        for ($origem = 0; $origem < $num_vertices; $origem++) {
+            foreach ($this->retornarVizinhos($origem) as $destino) {
+                // Como é não-direcionado, só adicionamos se (origem < destino) para evitar duplicatas
+                if ($origem < $destino) {
+                    $peso = $this->pesoAresta($origem, $destino);
+                    if ($peso !== null) {
+                        $arestas_grafo[] = [
+                            'de' => $origem,
+                            'para' => $destino,
+                            'peso' => $peso
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Ordena todas as arestas do grafo pelo peso (menor para maior)
+        usort($arestas_grafo, fn($a, $b) => $a['peso'] <=> $b['peso']);
+
+        $conjuntos_disjuntos = new UniaoBusca($num_vertices);
+        $agm_arestas = [];
+        $agm_peso_total = 0.0;
+        $num_arestas_na_agm = 0;
+
+        foreach ($arestas_grafo as $aresta) {
+            // Se a união for bem-sucedida (não forma ciclo)
+            if ($conjuntos_disjuntos->unir($aresta['de'], $aresta['para'])) {
+                $agm_arestas[] = $aresta;
+                $agm_peso_total += $aresta['peso'];
+                $num_arestas_na_agm++;
+
+                // Otimização: se já temos V-1 arestas, a AGM está completa
+                if ($num_arestas_na_agm === $num_vertices - 1) {
+                    break;
+                }
+            }
+        }
+
+        return ['peso_total' => $agm_peso_total, 'arestas' => $agm_arestas];
+    }
+} // Fim da classe abstrata Grafo
+
+
+/**
+ * Classe auxiliar para o algoritmo de Kruskal (Disjoint Set Union / Union-Find).
+ * Usada para detectar ciclos de forma eficiente.
+ */
+class UniaoBusca
+{
+    /** @var int[] */
+    protected array $parente;
+    /** @var int[] */
+    protected array $ranking;
+
+    public function __construct(int $numeroDeElementos)
+    {
+        $this->parente = array_fill(0, $numeroDeElementos, 0);
+        $this->ranking = array_fill(0, $numeroDeElementos, 0);
+        for ($i = 0; $i < $numeroDeElementos; $i++) {
+            $this->parente[$i] = $i; // Cada um é seu próprio parente inicialmente
+        }
+    }
+
+    /**
+     * Encontra o representante (raiz) do conjunto ao qual $i pertence.
+     */
+    public function encontrar(int $i): int
+    {
+        if ($this->parente[$i] == $i) {
+            return $i;
+        }
+        // Compressão de caminho: aponta $i diretamente para a raiz
+        $this->parente[$i] = $this->encontrar($this->parente[$i]);
+        return $this->parente[$i];
+    }
+
+    /**
+     * Une os conjuntos que contêm $x$ e $y$.
+     * Retorna true se a união foi feita, false se $x$ e $y$ já estavam no mesmo conjunto.
+     */
+    public function unir(int $x, int $y): bool
+    {
+        $raizDeX = $this->encontrar($x);
+        $raizDeY = $this->encontrar($y);
+
+        if ($raizDeX === $raizDeY) {
+            return false; // Já estão no mesmo conjunto (ciclo detectado)
+        }
+
+        // União por ranking: anexa a árvore menor à maior
+        if ($this->ranking[$raizDeX] < $this->ranking[$raizDeY]) {
+            $this->parente[$raizDeX] = $raizDeY;
+        } elseif ($this->ranking[$raizDeX] > $this->ranking[$raizDeY]) {
+            $this->parente[$raizDeY] = $raizDeX;
+        } else {
+            $this->parente[$raizDeY] = $raizDeX;
+            $this->ranking[$raizDeX]++;
+        }
+        return true;
     }
 }

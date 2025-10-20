@@ -7,6 +7,24 @@ document.addEventListener("DOMContentLoaded", () => {
     draw();
   }
 
+  function setHighlightFromEdges(edgeList) {
+    clearHighlight();
+    if (!Array.isArray(edgeList) || edgeList.length === 0) {
+      draw();
+      return;
+    }
+
+    edgeList.forEach((aresta) => {
+      const a = Number(aresta.de);
+      const b = Number(aresta.para);
+      state.highlight.nodes.add(a);
+      state.highlight.nodes.add(b);
+      state.highlight.edges.add(`${a}-${b}`);
+      state.highlight.edges.add(`${b}-${a}`);
+    });
+    draw();
+  }
+
   function setHighlightFromPath(pathIndices) {
     clearHighlight();
     if (!Array.isArray(pathIndices) || pathIndices.length === 0) {
@@ -544,6 +562,69 @@ document.addEventListener("DOMContentLoaded", () => {
     openDialog("Tabela de DIJKSTRA", html);
   };
 
+  window.runPrim = async function () {
+    const areaSaida = document.getElementById("algoOut");
+    areaSaida.textContent = "Executando Prim...";
+
+    const res = await api("run_prim");
+    if (!res.ok) {
+      areaSaida.textContent = `Erro: ${res.error || "Falha ao executar Prim"}`;
+      return alert(res.error || "Falha ao executar Prim");
+    }
+
+    const { result } = res;
+    let textoSaida = `--- Algoritmo de Prim ---\n\n`;
+    textoSaida += `Tempo de execução: ${result.time.toFixed(4)} ms\n`;
+    textoSaida += `Peso total da AGM: ${result.total_weight}\n`;
+    textoSaida += `Arestas na AGM: ${result.edges.length}\n\n`;
+
+    // Mapeia labels para as arestas (opcional, mas útil)
+    const labels = Object.fromEntries(state.nodes.map((n) => [n.id, n.label]));
+    textoSaida += "Arestas (de -> para | peso):\n";
+    result.edges.forEach((aresta) => {
+      textoSaida += `- ${labels[aresta.de]} -> ${labels[aresta.para]} | ${
+        aresta.peso
+      }\n`;
+    });
+
+    areaSaida.textContent = textoSaida;
+
+    // Destaca as arestas da AGM no visualizador
+    setHighlightFromEdges(result.edges);
+  };
+
+  window.runKruskal = async function () {
+    const areaSaida = document.getElementById("algoOut");
+    areaSaida.textContent = "Executando Kruskal...";
+
+    const res = await api("run_kruskal");
+    if (!res.ok) {
+      areaSaida.textContent = `Erro: ${
+        res.error || "Falha ao executar Kruskal"
+      }`;
+      return alert(res.error || "Falha ao executar Kruskal");
+    }
+
+    const { result } = res;
+    let textoSaida = `--- Algoritmo de Kruskal ---\n\n`;
+    textoSaida += `Tempo de execução: ${result.time.toFixed(4)} ms\n`;
+    textoSaida += `Peso total da AGM: ${result.total_weight}\n`;
+    textoSaida += `Arestas na AGM: ${result.edges.length}\n\n`;
+
+    // Mapeia labels para as arestas (opcional, mas útil)
+    const labels = Object.fromEntries(state.nodes.map((n) => [n.id, n.label]));
+    textoSaida += "Arestas (de -> para | peso):\n";
+    result.edges.forEach((aresta) => {
+      textoSaida += `- ${labels[aresta.de]} -> ${labels[aresta.para]} | ${
+        aresta.peso
+      }\n`;
+    });
+
+    areaSaida.textContent = textoSaida;
+
+    // Destaca as arestas da AGM no visualizador
+    setHighlightFromEdges(result.edges);
+  };
   window.onDijkstraRowClick = function (tr) {
     const pathCsv = tr.getAttribute("data-path") || "";
     const path = pathCsv

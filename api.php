@@ -114,6 +114,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 break;
 
+            // CÓDIGO ADICIONADO PARA AGM (PRIM)
+            case 'run_prim':
+                $g = get_graph();
+                _set_prop($g, 'direcionado', false); // AGM exige não-direcionado
+
+                $inicio_tempo = microtime(true);
+                $resultado_prim = $g->prim(0); // Inicia sempre do vértice 0
+                $fim_tempo = microtime(true);
+
+                $out['result'] = [
+                    'type' => 'prim',
+                    'time' => ($fim_tempo - $inicio_tempo) * 1000, // ms
+                    'total_weight' => $resultado_prim['peso_total'],
+                    'edges' => $resultado_prim['arestas']
+                ];
+                break;
+
+            // CÓDIGO ADICIONADO PARA AGM (KRUSKAL)
+            case 'run_kruskal':
+                $g = get_graph();
+                _set_prop($g, 'direcionado', false); // AGM exige não-direcionado
+
+                $inicio_tempo = microtime(true);
+                $resultado_kruskal = $g->kruskal();
+                $fim_tempo = microtime(true);
+
+                $out['result'] = [
+                    'type' => 'kruskal',
+                    'time' => ($fim_tempo - $inicio_tempo) * 1000, // ms
+                    'total_weight' => $resultado_kruskal['peso_total'],
+                    'edges' => $resultado_kruskal['arestas']
+                ];
+                break;
+
             case 'import_txt':
                 $conteudo = (string)($in['content'] ?? '');
                 if (trim($conteudo) === '') throw new Exception('Conteúdo TXT vazio.');
