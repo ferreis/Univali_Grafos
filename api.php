@@ -10,6 +10,40 @@ require_once "Planarity.php";
 
 session_start();
 
+$diretorioUpload = 'uploads/';
+if (!is_dir($diretorioUpload)) {
+    @mkdir($diretorioUpload, 0777, true);
+}
+
+if (isset($_FILES['pedaco_arquivo']) && isset($_POST['nome_arquivo_servidor'])) {
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    $caminhoArquivoTemp = $_FILES['pedaco_arquivo']['tmp_name'];
+
+    $nomeArquivo = basename($_POST['nome_arquivo_servidor']);
+    $caminhoDestino = $diretorioUpload . $nomeArquivo;
+
+    if (strpos($caminhoDestino, $diretorioUpload) !== 0) {
+        echo json_encode(['status' => 'error', 'error' => 'Nome de arquivo inválido.']);
+        exit;
+    }
+
+    $conteudoPedaco = file_get_contents($caminhoArquivoTemp);
+    if ($conteudoPedaco === false) {
+        echo json_encode(['status' => 'error', 'error' => 'Não foi possível ler o pedaço.']);
+        exit;
+    }
+
+    if (file_put_contents($caminhoDestino, $conteudoPedaco, FILE_APPEND | LOCK_EX)) {
+        @unlink($caminhoArquivoTemp);
+        echo json_encode(['status' => 'ok']);
+    } else {
+        echo json_encode(['status' => 'error', 'error' => 'Não foi possível salvar o pedaço no servidor.']);
+    }
+
+    exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -33,7 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $labels = grafo_labels($g);
                 $result = [];
 
-                // Garante que o grafo é não-direcionado e não-ponderado para coloração
                 _set_prop($g, 'direcionado', false);
                 _set_prop($g, 'ponderado', false);
 
@@ -55,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $out['result'] = $result;
-                // Se o grafo for pequeno, formata o mapeamento com labels
                 if (count($labels) < 10) {
                     $out['result']['details'] = [];
                     foreach ($result['mapping'] as $vertex_idx => $color_idx) {
@@ -114,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 break;
 
-            // CÓDIGO ADICIONADO PARA AGM (PRIM)
             case 'run_prim':
                 $g = get_graph();
                 _set_prop($g, 'direcionado', false); // AGM exige não-direcionado
@@ -131,7 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 break;
 
-            // CÓDIGO ADICIONADO PARA AGM (KRUSKAL)
             case 'run_kruskal':
                 $g = get_graph();
                 _set_prop($g, 'direcionado', false); // AGM exige não-direcionado
@@ -148,16 +178,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 break;
 
-            case 'import_txt':
-                $conteudo = (string)($in['content'] ?? '');
-                if (trim($conteudo) === '') throw new Exception('Conteúdo TXT vazio.');
+            case 'processar_arquivo_txt':
+                $nomeArquivo = basename($in['filename']);
+                $caminhoCompleto = $diretorioUpload . $nomeArquivo;
 
-                $arquivoTemp = tempnam(sys_get_temp_dir(), 'grafo_');
-                file_put_contents($arquivoTemp, $conteudo);
+                if (!file_exists($caminhoCompleto)) {
+                    throw new Exception("Arquivo não encontrado no servidor: $nomeArquivo");
+                }
 
                 $novo = new GrafoLista(false, false);
-                $novo->carregarDeArquivo($arquivoTemp);
-                @unlink($arquivoTemp);
+                $novo->carregarDeArquivo($caminhoCompleto);
+
+                @unlink($caminhoCompleto);
 
                 save_graph($novo);
                 $out['graph'] = build_graph_arrays($novo);

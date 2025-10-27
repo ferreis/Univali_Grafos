@@ -4,12 +4,13 @@
     <input type="checkbox" id="chkDir">
     <label class="form-label">Ponderado</label>
     <input type="checkbox" id="chkPond">
+    <div style="padding: 5px 10px; background: #f0f0f0; border-radius: 4px;">
+        <input type="checkbox" id="chkVisualizacao" checked>
+        <label for="chkVisualizacao">Habilitar visualização do grafo</label>
+        <span id="aviso-visualizacao" style="color: #c00; font-size: 0.9em; margin-left: 10px;"></span>
+    </div>
     <div class="btn-row">
         <button class="btn" onclick="applyFlags()">Aplicar</button>
         <button class="btn secondary" onclick="resetGraph()">Reset</button>
-    </div>
-    <div>
-        <input type="checkbox" id="checkbox-desativar-visualizacao" name="desativar_visualizacao">
-        <label for="checkbox-desativar-visualizacao">Desativar visualização do grafo (para arquivos grandes)</label>
     </div>
 </div>

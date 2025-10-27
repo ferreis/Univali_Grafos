@@ -83,7 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
     "#000075",
     "#808080",
   ];
+
+  // ADICIONADO: Limite de nós para desenhar (ajuste se necessário)
   const MAX_NODOS_VISUAIS = 1500;
+
   const state = {
     nodes: [],
     edges: [],
@@ -91,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     transform: { x: 0, y: 0, k: 1 },
     highlight: { nodes: new Set(), edges: new Set() },
     coloring: {},
-    visualizacaoAtiva: true,
+    visualizacaoAtiva: true, // <-- ADICIONADO: Flag para controlar o desenho
   };
 
   const boot = window.initialGraphData;
@@ -128,10 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function draw() {
+    // ADICIONADO: Verificação para pular o desenho se a visualização estiver desativada
     if (!state.visualizacaoAtiva) {
-      vp.innerHTML = "";
-      return;
+      vp.innerHTML = ""; // Limpa o SVG para garantir
+      return; // Pula toda a renderização
     }
+
     ensurePositions();
     vp.innerHTML = "";
 
@@ -366,7 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return r.json();
   }
 
-function applyGraph(g) {
+  function applyGraph(g) {
     const pos = Object.fromEntries(
       state.nodes.map((n) => [n.id, { x: n.x, y: n.y }])
     );
@@ -374,15 +379,19 @@ function applyGraph(g) {
     state.edges = g.edges.map((e) => ({ ...e }));
     state.flags = g.flags;
 
-    const chkVisualizacao = document.getElementById("chkVisualizacao");
+    const chkVisualizacao = false;
+      //document.getElementById("chkVisualizacao");
     const avisoVisualizacao = document.getElementById("aviso-visualizacao");
-    
+
     if (state.nodes.length > MAX_NODOS_VISUAIS) {
+      // Se o grafo for muito grande, força a desativação
       state.visualizacaoAtiva = false;
       chkVisualizacao.checked = false;
       chkVisualizacao.disabled = true;
-      avisoVisualizacao.textContent = "Visualização desativada (grafo muito grande).";
+      avisoVisualizacao.textContent =
+        "Visualização desativada (grafo muito grande).";
     } else {
+      // Se o grafo for pequeno, usa a preferência do usuário
       state.visualizacaoAtiva = chkVisualizacao.checked;
       chkVisualizacao.disabled = false;
       avisoVisualizacao.textContent = "";
@@ -480,6 +489,7 @@ function applyGraph(g) {
       alert("JSON inválido.");
     }
   };
+
   /**
    * Aciona o clique no input de arquivo escondido.
    */
@@ -487,10 +497,6 @@ function applyGraph(g) {
     document.getElementById("fileImportTXT").click();
   };
 
-  /**
-   * Lê o arquivo TXT selecionado e envia seu conteúdo para a API.
-   * Esta função é acionada pelo evento 'change' do input de arquivo.
-   */
   async function handleFileImport(event) {
     const file = event.target.files[0];
     if (!file) {
@@ -502,8 +508,12 @@ function applyGraph(g) {
 
     const TAMANHO_PEDACO = 5 * 1024 * 1024; // 5 MB por pedaço
     const totalPedacos = Math.ceil(file.size / TAMANHO_PEDACO);
-    
-    const nomeUnicoServidor = `upload_${Date.now()}_${file.name}`;
+
+    // Gera um nome de arquivo único no servidor para evitar conflitos
+    const nomeUnicoServidor = `upload_${Date.now()}_${file.name.replace(
+      /[^a-zA-Z0-9\._-]/g,
+      ""
+    )}`;
 
     for (let pedacoAtual = 0; pedacoAtual < totalPedacos; pedacoAtual++) {
       const inicio = pedacoAtual * TAMANHO_PEDACO;
@@ -512,9 +522,11 @@ function applyGraph(g) {
 
       const formData = new FormData();
       formData.append("pedaco_arquivo", pedacoArquivo);
-      formData.append("nome_arquivo_servidor", nomeUnicoServidor);
+      formData.append("nome_arquivo_servidor", nomeUnicoServidor); // Envia o nome único
 
-      outputEl.textContent = `Enviando pedaço ${pedacoAtual + 1} de ${totalPedacos}...`;
+      outputEl.textContent = `Enviando pedaço ${
+        pedacoAtual + 1
+      } de ${totalPedacos}...`;
 
       try {
         const resposta = await fetch("api.php", {
@@ -527,22 +539,27 @@ function applyGraph(g) {
         }
 
         const jsonResposta = await resposta.json();
-        if (jsonResposta.status !== 'ok') {
-          throw new Error(jsonResposta.error || 'Erro desconhecido no servidor.');
+        if (jsonResposta.status !== "ok") {
+          throw new Error(
+            jsonResposta.error || "Erro desconhecido no servidor."
+          );
         }
-
       } catch (erro) {
-        outputEl.textContent = `Erro no upload do pedaço ${pedacoAtual + 1}: ${erro.message}`;
+        outputEl.textContent = `Erro no upload do pedaço ${pedacoAtual + 1}: ${
+          erro.message
+        }`;
         alert(`Erro ao enviar o arquivo: ${erro.message}`);
         event.target.value = ""; // Limpa o input
         return; // Aborta o upload
       }
     }
-    outputEl.textContent = "Upload completo. Processando o grafo no servidor...";
+
+    outputEl.textContent =
+      "Upload completo. Processando o grafo no servidor...";
 
     try {
-      const r = await api("processar_arquivo_txt", { 
-        filename: nomeUnicoServidor
+      const r = await api("processar_arquivo_txt", {
+        filename: nomeUnicoServidor,
       });
 
       if (r.ok) {
@@ -553,13 +570,12 @@ function applyGraph(g) {
         alert(r.error || "Falha ao processar o arquivo TXT no servidor.");
       }
     } catch (erro) {
-        outputEl.textContent = `Erro na chamada de processamento: ${erro.message}`;
-        alert(erro.message);
+      outputEl.textContent = `Erro na chamada de processamento: ${erro.message}`;
+      alert(erro.message);
     }
+
     event.target.value = "";
   }
-
-
   /* ===================== Algoritmos ===================== */
   window.runBFS = async function () {
     const startNode = +document.getElementById("selAlgoStart").value || 0;
@@ -697,9 +713,8 @@ function applyGraph(g) {
    * @param {Object} mapping - Mapeamento de { verticeId: colorId }
    */
   function animateColoring(mapping) {
-    // Limpa a coloração anterior e reseta o estado
     state.coloring = {};
-    draw(); // Redesenha o grafo com as cores padrão
+    draw();
 
     const verticesToColor = Object.keys(mapping);
     if (verticesToColor.length === 0) return;
@@ -714,12 +729,11 @@ function applyGraph(g) {
       const vertexId = verticesToColor[i];
       const colorId = mapping[vertexId];
 
-      // Aplica a cor ao estado e redesenha
       state.coloring[vertexId] = colorId;
       draw();
 
       i++;
-    }, 100); // Intervalo de 100ms entre cada pintura
+    }, 100);
   }
 
   /**
@@ -835,7 +849,17 @@ function applyGraph(g) {
     draw();
   };
 
-/* ===================== Inicialização ===================== */
+  /* ===================== Export SVG ===================== */
+  window.downloadSVG = function () {
+    const s = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([s], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "grafo.svg";
+    a.click();
+  };
+
+  /* ===================== Inicialização ===================== */
   state.nodes = boot.nodes.map((n) => ({ ...n }));
   state.edges = boot.edges.map((e) => ({ ...e }));
   document
@@ -853,7 +877,6 @@ function applyGraph(g) {
 
   setFlagInfo();
   refreshSelects();
-  // layoutCirc(); 
   applyGraph(boot);
   applyTransform();
 });

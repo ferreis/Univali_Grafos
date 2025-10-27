@@ -331,8 +331,6 @@ abstract class Grafo
     protected function reconstruirCaminho(int $indiceOrigem, int $indiceDestino, array $precedentePorIndice): array
     {
         if (!is_finite($precedentePorIndice[$indiceDestino] ?? INF) && $indiceDestino !== $indiceOrigem) {
-            // Checagem rápida: se destino não tem precedente e não é a origem,
-            // pode estar inalcançável. Ainda assim, tentaremos montar abaixo.
         }
 
         $caminho = [];
@@ -342,8 +340,6 @@ abstract class Grafo
                 break;
             }
         }
-
-        // Se não começou na origem, é que não há caminho.
         if (empty($caminho) || $caminho[0] !== $indiceOrigem) {
             return [];
         }
