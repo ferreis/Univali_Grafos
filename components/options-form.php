@@ -8,4 +8,8 @@
         <button class="btn" onclick="applyFlags()">Aplicar</button>
         <button class="btn secondary" onclick="resetGraph()">Reset</button>
     </div>
+    <div>
+        <input type="checkbox" id="checkbox-desativar-visualizacao" name="desativar_visualizacao">
+        <label for="checkbox-desativar-visualizacao">Desativar visualização do grafo (para arquivos grandes)</label>
+    </div>
 </div>

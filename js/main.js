@@ -83,14 +83,15 @@ document.addEventListener("DOMContentLoaded", () => {
     "#000075",
     "#808080",
   ];
-
+  const MAX_NODOS_VISUAIS = 1500;
   const state = {
     nodes: [],
     edges: [],
     flags: window.initialGraphData.flags,
     transform: { x: 0, y: 0, k: 1 },
     highlight: { nodes: new Set(), edges: new Set() },
-    coloring: {}, // <-- ADICIONE ESTA LINHA (mapeamento: {verticeId: colorId})
+    coloring: {},
+    visualizacaoAtiva: true,
   };
 
   const boot = window.initialGraphData;
@@ -127,6 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function draw() {
+    if (!state.visualizacaoAtiva) {
+      vp.innerHTML = "";
+      return;
+    }
     ensurePositions();
     vp.innerHTML = "";
 
@@ -361,13 +366,28 @@ document.addEventListener("DOMContentLoaded", () => {
     return r.json();
   }
 
-  function applyGraph(g) {
+function applyGraph(g) {
     const pos = Object.fromEntries(
       state.nodes.map((n) => [n.id, { x: n.x, y: n.y }])
     );
     state.nodes = g.nodes.map((n) => ({ ...n, ...(pos[n.id] || {}) }));
     state.edges = g.edges.map((e) => ({ ...e }));
     state.flags = g.flags;
+
+    const chkVisualizacao = document.getElementById("chkVisualizacao");
+    const avisoVisualizacao = document.getElementById("aviso-visualizacao");
+    
+    if (state.nodes.length > MAX_NODOS_VISUAIS) {
+      state.visualizacaoAtiva = false;
+      chkVisualizacao.checked = false;
+      chkVisualizacao.disabled = true;
+      avisoVisualizacao.textContent = "Visualização desativada (grafo muito grande).";
+    } else {
+      state.visualizacaoAtiva = chkVisualizacao.checked;
+      chkVisualizacao.disabled = false;
+      avisoVisualizacao.textContent = "";
+    }
+
     setFlagInfo();
     refreshSelects();
     draw();
@@ -477,34 +497,68 @@ document.addEventListener("DOMContentLoaded", () => {
       return; // Nenhum arquivo selecionado
     }
 
-    const reader = new FileReader();
+    const outputEl = document.getElementById("algoOut");
+    outputEl.textContent = "Iniciando upload do arquivo...";
 
-    reader.onload = async (e) => {
-      const content = e.target.result;
-      if (!content.trim()) {
-        return alert("O arquivo TXT está vazio.");
+    const TAMANHO_PEDACO = 5 * 1024 * 1024; // 5 MB por pedaço
+    const totalPedacos = Math.ceil(file.size / TAMANHO_PEDACO);
+    
+    const nomeUnicoServidor = `upload_${Date.now()}_${file.name}`;
+
+    for (let pedacoAtual = 0; pedacoAtual < totalPedacos; pedacoAtual++) {
+      const inicio = pedacoAtual * TAMANHO_PEDACO;
+      const fim = Math.min(inicio + TAMANHO_PEDACO, file.size);
+      const pedacoArquivo = file.slice(inicio, fim);
+
+      const formData = new FormData();
+      formData.append("pedaco_arquivo", pedacoArquivo);
+      formData.append("nome_arquivo_servidor", nomeUnicoServidor);
+
+      outputEl.textContent = `Enviando pedaço ${pedacoAtual + 1} de ${totalPedacos}...`;
+
+      try {
+        const resposta = await fetch("api.php", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resposta.ok) {
+          throw new Error(`Falha no servidor: ${resposta.statusText}`);
+        }
+
+        const jsonResposta = await resposta.json();
+        if (jsonResposta.status !== 'ok') {
+          throw new Error(jsonResposta.error || 'Erro desconhecido no servidor.');
+        }
+
+      } catch (erro) {
+        outputEl.textContent = `Erro no upload do pedaço ${pedacoAtual + 1}: ${erro.message}`;
+        alert(`Erro ao enviar o arquivo: ${erro.message}`);
+        event.target.value = ""; // Limpa o input
+        return; // Aborta o upload
       }
+    }
+    outputEl.textContent = "Upload completo. Processando o grafo no servidor...";
 
-      const r = await api("import_txt", { content: content });
+    try {
+      const r = await api("processar_arquivo_txt", { 
+        filename: nomeUnicoServidor
+      });
 
       if (r.ok) {
         applyGraph(r.graph);
-        document.getElementById("algoOut").textContent =
-          "Grafo importado com sucesso do arquivo TXT.";
+        outputEl.textContent = "Grafo importado com sucesso do arquivo TXT.";
       } else {
-        alert(r.error || "Falha ao importar o arquivo TXT.");
+        outputEl.textContent = `Erro ao processar o arquivo: ${r.error}`;
+        alert(r.error || "Falha ao processar o arquivo TXT no servidor.");
       }
-    };
-
-    reader.onerror = () => {
-      alert("Ocorreu um erro ao ler o arquivo.");
-    };
-
-    reader.readAsText(file);
-
-    // Limpa o valor do input para permitir o reenvio do mesmo arquivo
+    } catch (erro) {
+        outputEl.textContent = `Erro na chamada de processamento: ${erro.message}`;
+        alert(erro.message);
+    }
     event.target.value = "";
   }
+
 
   /* ===================== Algoritmos ===================== */
   window.runBFS = async function () {
@@ -781,25 +835,25 @@ document.addEventListener("DOMContentLoaded", () => {
     draw();
   };
 
-  /* ===================== Export SVG ===================== */
-  window.downloadSVG = function () {
-    const s = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([s], { type: "image/svg+xml" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "grafo.svg";
-    a.click();
-  };
-
-  /* ===================== Inicialização ===================== */
+/* ===================== Inicialização ===================== */
   state.nodes = boot.nodes.map((n) => ({ ...n }));
   state.edges = boot.edges.map((e) => ({ ...e }));
   document
     .getElementById("fileImportTXT")
     .addEventListener("change", handleFileImport);
 
+  document.getElementById("chkVisualizacao").addEventListener("change", (e) => {
+    state.visualizacaoAtiva = e.target.checked;
+    if (state.visualizacaoAtiva) {
+      draw();
+    } else {
+      vp.innerHTML = "";
+    }
+  });
+
   setFlagInfo();
   refreshSelects();
-  layoutCirc();
+  // layoutCirc(); 
+  applyGraph(boot);
   applyTransform();
 });
