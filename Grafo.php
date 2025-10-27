@@ -375,7 +375,6 @@ abstract class Grafo
         $vertice_esta_na_agm = array_fill(0, $num_vertices, false);
 
         $fila_prioridade = new SplPriorityQueue();
-        // Usamos prioridade negativa para simular min-heap
         $fila_prioridade->insert($indiceVerticeInicial, 0.0);
         $custo_minimo_aresta[$indiceVerticeInicial] = 0.0;
 
@@ -475,7 +474,7 @@ abstract class Grafo
 
         return ['peso_total' => $agm_peso_total, 'arestas' => $agm_arestas];
     }
-} // Fim da classe abstrata Grafo
+}
 
 
 /**
@@ -521,7 +520,7 @@ class UniaoBusca
         $raizDeY = $this->encontrar($y);
 
         if ($raizDeX === $raizDeY) {
-            return false; // Já estão no mesmo conjunto (ciclo detectado)
+            return false;
         }
 
         // União por ranking: anexa a árvore menor à maior
