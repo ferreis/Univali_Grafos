@@ -1,5 +1,4 @@
 <?php
-// index.php
 require_once "Grafo.php";
 require_once "GrafoMatriz.php";
 require_once "GrafoLista.php";
@@ -29,7 +28,6 @@ $grafo_inicial = build_graph_arrays(get_graph());
             <div class="bd">
                 <?php include 'components/options-form.php'; ?>
                 <?php include 'components/algorithms-form.php'; ?>
-                <?php include 'components/coloring-form.php'; ?>
 
 
                 <?php include 'components/vertex-form.php'; ?>

@@ -43,7 +43,7 @@ class GrafoLista extends Grafo
     public function inserirVertice(string $label): bool
     {
         $this->vertices[] = $label;
-        $this->lista[] = []; // lista de arestas de saída vazia para o novo vértice
+        $this->lista[] = [];
         return true;
     }
 
@@ -57,28 +57,28 @@ class GrafoLista extends Grafo
     public function removerVertice(int $indice): bool
     {
         if (!isset($this->vertices[$indice])) {
-            return false; // índice inválido
+            return false;
         }
 
-        // 1) Remove o rótulo do vértice e compacta
+        
         unset($this->vertices[$indice]);
         $this->vertices = array_values($this->vertices);
 
-        // 2) Remove a lista de adjacência do vértice e compacta
+        
         unset($this->lista[$indice]);
         $this->lista = array_values($this->lista);
 
-        // 3) Remove arestas que apontavam para o vértice removido
+        
         foreach ($this->lista as &$listaDeArestasPorOrigem) {
             foreach ($listaDeArestasPorOrigem as $indiceAresta => $aresta) {
                 if ($aresta['destino'] == $indice) {
                     unset($listaDeArestasPorOrigem[$indiceAresta]);
                 }
             }
-            // Reindexa a lista de arestas desse vértice
+            
             $listaDeArestasPorOrigem = array_values($listaDeArestasPorOrigem);
         }
-        unset($listaDeArestasPorOrigem); // boa prática ao usar referência (&)
+        unset($listaDeArestasPorOrigem);
 
         return true;
     }
@@ -115,18 +115,18 @@ class GrafoLista extends Grafo
      */
     public function inserirAresta(int $origem, int $destino, float $peso = 1): bool
     {
-        // Validação básica de índices
+        
         if (!isset($this->vertices[$origem]) || !isset($this->vertices[$destino])) {
             return false;
         }
 
-        // Aresta de origem -> destino
+        
         $this->lista[$origem][] = [
             "destino" => $destino,
             "peso"    => $this->ponderado ? $peso : 1.0,
         ];
 
-        // Se não-direcionado, cria a aresta espelhada (destino -> origem)
+        
         if (!$this->direcionado) {
             $this->lista[$destino][] = [
                 "destino" => $origem,
@@ -143,7 +143,7 @@ class GrafoLista extends Grafo
      */
     public function removerAresta(int $origem, int $destino): bool
     {
-        // Remove da lista de saída de $origem todas as arestas que chegam a $destino
+        
         $this->lista[$origem] = array_values(
             array_filter(
                 $this->lista[$origem] ?? [],
@@ -151,7 +151,7 @@ class GrafoLista extends Grafo
             )
         );
 
-        // Em não-direcionado, remove também a simétrica
+        
         if (!$this->direcionado) {
             $this->lista[$destino] = array_values(
                 array_filter(

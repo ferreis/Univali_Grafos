@@ -10,7 +10,7 @@ class Coloring
         $result = $callback();
         $end_time = microtime(true);
 
-        $result['time'] = ($end_time - $start_time) * 1000; // em milissegundos
+        $result['time'] = ($end_time - $start_time) * 1000;
         return $result;
     }
 
@@ -30,14 +30,12 @@ class Coloring
         return true;
     }
 
-    // ==================================================================
-    // HEURÍSTICA TESTE: GULOSA COM ORDEM ARBITRÁRIA
-    // ==================================================================
+    // Heurística: gulosa com ordem arbitrária
     public static function greedy_arbitrary(Grafo $g): array
     {
         return self::time_execution(function () use ($g) {
             $num_vertices = count(_get_prop($g, 'vertices'));
-            $colors = array_fill(0, $num_vertices, -1); // -1 = sem cor
+            $colors = array_fill(0, $num_vertices, -1);
             $num_colors = 0;
 
             for ($u = 0; $u < $num_vertices; $u++) {
@@ -63,9 +61,7 @@ class Coloring
         });
     }
 
-    // ==================================================================
-    // HEURÍSTICA 1: WELSH-POWELL (ORDEM DE GRAU DECRESCENTE)
-    // ==================================================================
+    // Heurística: Welsh-Powell (ordem de grau decrescente)
     public static function welsh_powell(Grafo $g): array
     {
         return self::time_execution(function () use ($g) {
@@ -74,7 +70,7 @@ class Coloring
             for ($i = 0; $i < $num_vertices; $i++) {
                 $degrees[$i] = count($g->retornarVizinhos($i));
             }
-            arsort($degrees); // Ordena mantendo os índices (vértices)
+            arsort($degrees);
 
             $sorted_vertices = array_keys($degrees);
             $colors = array_fill(0, $num_vertices, -1);
@@ -106,9 +102,7 @@ class Coloring
         });
     }
 
-    // ==================================================================
-    // HEURÍSTICA 2: DSATUR (Implementação Correta e Eficiente)
-    // ==================================================================
+    // Heurística: DSATUR
     public static function dsatur(Grafo $g): array
     {
         return self::time_execution(function () use ($g) {
@@ -134,8 +128,7 @@ class Coloring
                 $max_sat = -1;
                 $max_deg = -1;
 
-                // 1. Encontra o próximo vértice a ser colorido
-                // Procura o vértice não colorido com maior saturação. Em caso de empate, o de maior grau.
+                // Encontra o próximo vértice a ser colorido: maior saturação, desempata por grau
                 foreach ($uncolored_vertices_map as $u => $_) {
                     if ($saturation[$u] > $max_sat) {
                         $max_sat = $saturation[$u];
@@ -149,13 +142,13 @@ class Coloring
                     }
                 }
 
-                // Na primeira iteração, a saturação é 0 para todos, então pegamos o de maior grau
+                // Na primeira iteração, a saturação é 0 para todos
                 if ($i === 0) {
                     arsort($degrees);
                     $best_vertex = key($degrees);
                 }
 
-                // 2. Colore o vértice escolhido com a menor cor possível
+                // Colore o vértice escolhido com a menor cor possível
                 $used_neighbor_colors = [];
                 foreach ($g->retornarVizinhos($best_vertex) as $v) {
                     if ($colors[$v] !== -1) {
@@ -172,11 +165,10 @@ class Coloring
                 $num_colors = max($num_colors, $color + 1);
                 unset($uncolored_vertices_map[$best_vertex]);
 
-                // 3. ATUALIZA A SATURAÇÃO DOS VIZINHOS (A PARTE CRUCIAL)
-                // Para cada vizinho não colorido do vértice que acabamos de pintar...
+                // Atualiza a saturação dos vizinhos não coloridos
                 foreach ($g->retornarVizinhos($best_vertex) as $neighbor) {
                     if (isset($uncolored_vertices_map[$neighbor])) {
-                        // ...verifica se a cor que usamos é nova para ele.
+                        // Verifica se a cor usada é nova para o vizinho
                         $is_new_color_for_neighbor = true;
                         foreach ($g->retornarVizinhos($neighbor) as $neighbor_of_neighbor) {
                             if ($colors[$neighbor_of_neighbor] === $color) {
@@ -184,7 +176,7 @@ class Coloring
                                 break;
                             }
                         }
-                        // Se for uma cor nova na vizinhança dele, incrementamos sua saturação.
+                        // Se for cor nova na vizinhança, incrementa a saturação
                         if ($is_new_color_for_neighbor) {
                             $saturation[$neighbor]++;
                         }
@@ -200,15 +192,13 @@ class Coloring
     }
 
 
-    // ==================================================================
-    // FORÇA BRUTA
-    // ==================================================================
+    // Força bruta
     public static function brute_force(Grafo $g): array
     {
         return self::time_execution(function () use ($g) {
             $num_vertices = count(_get_prop($g, 'vertices'));
             if ($num_vertices === 0) return ['num_colors' => 0, 'mapping' => []];
-            if ($num_vertices > 10) { // Limite de segurança
+            if ($num_vertices > 10) {
                 throw new Exception("Força bruta não é viável para grafos com mais de 10 vértices.");
             }
 

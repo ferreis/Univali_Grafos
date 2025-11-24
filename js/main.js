@@ -631,6 +631,28 @@ document.addEventListener("DOMContentLoaded", () => {
     html += "</tbody></table>";
     openDialog("Tabela de DIJKSTRA", html);
   };
+  window.runMaxFlow = async function () {
+    const source = +document.getElementById("selOrigem").value || 0;
+    const sink = +document.getElementById("selDestino").value || (state.nodes.length - 1);
+    const out = document.getElementById("algoOut");
+    out.textContent = "Executando Ford-Fulkerson...";
+    const res = await api("run_maxflow", { source, sink });
+    if (!res.ok) return (out.textContent = `Erro: ${res.error || 'falha'}`);
+    const r = res.result;
+    out.textContent = `Fluxo Máximo (Fonte ${r.source} -> Sorvedouro ${r.sink}): ${r.max_flow}`;
+  };
+
+  window.runOptimizeFlow = async function () {
+    const source = +document.getElementById("selOrigem").value || 0;
+    const sink = +document.getElementById("selDestino").value || (state.nodes.length - 1);
+    const out = document.getElementById("algoOut");
+    out.textContent = "Executando busca local para otimização...";
+    const res = await api("optimize_flow", { source, sink });
+    if (!res.ok) return (out.textContent = `Erro: ${res.error || 'falha'}`);
+    const r = res.result;
+    out.textContent = `Fluxo Inicial: ${r.initial_flow}\nFluxo Otimizado: ${r.optimized_flow}\nPassos: ${r.steps}`;
+    if (res.graph) applyGraph(res.graph);
+  };
 
   window.runPrim = async function () {
     const areaSaida = document.getElementById("algoOut");

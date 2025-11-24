@@ -19,7 +19,7 @@ abstract class Grafo
         $this->vertices = [];
     }
 
-    // ===== Operações básicas que as classes filhas DEVEM implementar =====
+    // Operações básicas que as classes filhas DEVEM implementar
     abstract public function inserirVertice(string $rotuloVertice): bool;
     abstract public function removerVertice(int $indiceVertice): bool;
     abstract public function labelVertice(int $indiceVertice): ?string;
@@ -41,7 +41,7 @@ abstract class Grafo
      */
     abstract public function retornarVizinhos(int $indiceVertice): array;
 
-    // =================== Helpers ===================
+    // Helpers
 
     protected function obterNumeroDeVertices(): int
     {
@@ -58,7 +58,7 @@ abstract class Grafo
         $this->ponderado = $ehPonderado;
     }
 
-    // =================== Leitura de arquivo ===================
+    // Leitura de arquivo
 
     /**
      * Formato:
@@ -78,7 +78,7 @@ abstract class Grafo
             throw new RuntimeException("Falha ao ler o arquivo '{$caminhoArquivo}'.");
         }
 
-        // Cabeçalho: V A D P
+        
         $cabecalho = preg_split('/\s+/', trim($linhas[0]));
         if (count($cabecalho) !== 4) {
             throw new InvalidArgumentException("Cabeçalho inválido. Esperado: 'V A D P'.");
@@ -92,7 +92,7 @@ abstract class Grafo
             throw new InvalidArgumentException("Arquivo informa {$quantidadeArestas} arestas, mas foram lidas " . count($linhasArestas) . ".");
         }
 
-        // ===== Detectar modo: índices numéricos (base 0/1) OU labels (A,B,C,...) =====
+        
         $usarLabels = false;
         $maiorIndiceVisto = -1;
         $conjuntoLabels = [];              // ordem de 1ª aparição
@@ -118,17 +118,17 @@ abstract class Grafo
 
             if ($usarLabels) {
                 if (!$aEhNum && !isset($mapaLabelParaIndice[$a])) {
-                    $mapaLabelParaIndice[$a] = count($conjuntoLabels);
-                    $conjuntoLabels[] = $a;
-                }
-                if (!$bEhNum && !isset($mapaLabelParaIndice[$b])) {
-                    $mapaLabelParaIndice[$b] = count($conjuntoLabels);
-                    $conjuntoLabels[] = $b;
-                }
+                        $mapaLabelParaIndice[$a] = count($conjuntoLabels);
+                        $conjuntoLabels[] = $a;
+                    }
+                    if (!$bEhNum && !isset($mapaLabelParaIndice[$b])) {
+                        $mapaLabelParaIndice[$b] = count($conjuntoLabels);
+                        $conjuntoLabels[] = $b;
+                    }
             }
         }
 
-        // ===== Criar vértices =====
+        
         $this->vertices = [];
 
         if ($usarLabels) {
@@ -138,26 +138,26 @@ abstract class Grafo
                     "Cabeçalho V={$quantidadeVertices}, mas o arquivo usa labels para " . count($conjuntoLabels) . " vértices."
                 );
             }
-            // Inserir com labels do arquivo (ordem de 1ª aparição)
+            
             foreach ($conjuntoLabels as $rotulo) {
                 $this->inserirVertice((string)$rotulo);
             }
         } else {
-            // Modo numérico: detectar base (0 ou 1)
+            
             $arquivoEhBase1 = ($maiorIndiceVisto === $quantidadeVertices);
             for ($i = 0; $i < $quantidadeVertices; $i++) {
-                // rótulo padrão = índice em string
+                
                 $this->inserirVertice((string)$i);
             }
         }
 
-        // ===== Inserir arestas =====
+        
         foreach ($linhasArestas as $linha) {
             $p = preg_split('/\s+/', trim($linha));
             $a = $p[0];
             $b = $p[1];
 
-            // Peso
+            
             $peso = 1.0;
             if ($this->ponderado) {
                 if (count($p) < 3) throw new InvalidArgumentException("Aresta ponderada sem peso: '{$linha}'.");
@@ -165,7 +165,7 @@ abstract class Grafo
                 if ($peso < 0) throw new InvalidArgumentException("Peso negativo não suportado no Dijkstra. Linha: '{$linha}'.");
             }
 
-            // Resolver índices
+            
             if ($usarLabels) {
                 if (!isset($mapaLabelParaIndice[$a]) || !isset($mapaLabelParaIndice[$b])) {
                     throw new InvalidArgumentException("Label desconhecido na linha: '{$linha}'.");
@@ -185,7 +185,7 @@ abstract class Grafo
                 }
             }
 
-            // Inserir uma via
+            
             $this->inserirAresta($origem, $destino, $peso);
             // Duplicar se não direcionado
             if (!$this->direcionado) {

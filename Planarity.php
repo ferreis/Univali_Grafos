@@ -1,5 +1,5 @@
 <?php
-// Grafos/Planarity.php
+
 
 class Planarity
 {

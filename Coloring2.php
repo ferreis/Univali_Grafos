@@ -10,7 +10,7 @@ class Coloring
         $result = $callback();
         $end_time = microtime(true);
 
-        $result['time'] = ($end_time - $start_time) * 1000; // em milissegundos
+        $result['time'] = ($end_time - $start_time) * 1000;
         return $result;
     }
 
@@ -37,7 +37,7 @@ class Coloring
     {
         return self::time_execution(function () use ($g) {
             $num_vertices = count(_get_prop($g, 'vertices'));
-            $colors = array_fill(0, $num_vertices, -1); // -1 = sem cor
+            $colors = array_fill(0, $num_vertices, -1);
             $num_colors = 0;
 
             for ($u = 0; $u < $num_vertices; $u++) {
@@ -74,7 +74,7 @@ class Coloring
             for ($i = 0; $i < $num_vertices; $i++) {
                 $degrees[$i] = count($g->retornarVizinhos($i));
             }
-            arsort($degrees); // Ordena mantendo os índices (vértices)
+            arsort($degrees);
 
             $sorted_vertices = array_keys($degrees);
             $colors = array_fill(0, $num_vertices, -1);

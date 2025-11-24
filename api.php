@@ -6,6 +6,7 @@ require_once "includes/helpers.php";
 require_once "includes/state-manager.php";
 require_once "Coloring.php";
 require_once "Planarity.php";
+require_once "Fluxo.php";
 
 
 session_start();
@@ -57,6 +58,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         switch ($in['action'] ?? '') {
+            case 'run_maxflow':
+                $fonte = isset($in['source']) ? (int)$in['source'] : 0;
+                $sorvedouro = isset($in['sink']) ? (int)$in['sink'] : (count(grafo_labels($g)) - 1);
+                $valor = Fluxo::fordFulkerson($g, $fonte, $sorvedouro);
+                $out['result'] = ['max_flow' => $valor, 'source' => $fonte, 'sink' => $sorvedouro];
+                break;
+
+            case 'optimize_flow':
+                $fonte = isset($in['source']) ? (int)$in['source'] : 0;
+                $sorvedouro = isset($in['sink']) ? (int)$in['sink'] : (count(grafo_labels($g)) - 1);
+                $res = Fluxo::otimizarFluxo($g, $fonte, $sorvedouro);
+                if (is_array($res) && isset($res['final_graph'])) {
+                    // salva o grafo otimizado na sessão
+                    save_graph($res['final_graph']);
+                    $out['graph'] = build_graph_arrays($res['final_graph']);
+                }
+                $out['result'] = [
+                    'initial_flow' => $res['initial_flow'] ?? null,
+                    'optimized_flow' => $res['optimized_flow'] ?? null,
+                    'steps' => $res['steps'] ?? 0
+                ];
+                break;
             case 'check_planarity':
                 $g = get_graph();
                 $out['result'] = Planarity::check($g);
